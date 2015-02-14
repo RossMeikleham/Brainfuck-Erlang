@@ -50,10 +50,15 @@ storeByte(St) ->
 
 % Returns the position in memory
 % after the next right square bracket
-getNextRBrace(St, Pc) ->
-    case (array:get(Pc, St#state.ins) == 93) of
-        true -> Pc + 1;
-        false -> getNextRBrace(St, Pc + 1)
+getNextRBrace(St, Pc, RCount) ->
+    Byte = array:get(Pc, St#state.ins),
+    case Byte of
+        91 -> getNextRBrace(St, Pc + 1, RCount + 1);
+        93 -> (case RCount of
+                0 -> Pc + 1;
+                _ -> getNextRBrace(St, Pc + 1, RCount - 1)
+              end);
+        _  -> getNextRBrace(St, Pc + 1, RCount)
     end.
 
 % If the byte at the data pointer is 0 then instead of moving the 
@@ -63,20 +68,23 @@ jmpForward(St) ->
     Dp = St#state.data_pointer,
     C = St#state.cells,
     Pc = St#state.pc,
-    io:fwrite("~p", 
     case (array:get(Dp, C) == 0) of
-        true -> St#state{pc = getNextRBrace(St, Pc)};
+        true -> St#state{pc = getNextRBrace(St, Pc, 0)};
         false -> St
-   end.
+    end.
 
 
 
 
-getPreviousLBrace(St, Pc) ->
-    io:fwrite(" ~p ",[Pc]),
-    case (array:get(Pc, St#state.ins) == 91) of
-        true -> Pc - 1;
-        false -> getPreviousLBrace(St, Pc - 1)
+getPreviousLBrace(St, Pc, RCount) ->
+    Byte = array:get(Pc, St#state.ins),
+    case Byte of
+        93 -> getPreviousLBrace(St, Pc - 1, RCount + 1);
+        91 -> (case RCount of
+                0 -> Pc - 1;
+                _ -> getPreviousLBrace(St, Pc - 1, RCount - 1)
+              end);
+        _  -> getPreviousLBrace(St, Pc - 1, RCount)
     end.
 
 % If the byte at the data pointe ris non zero then instead of moving
@@ -87,7 +95,7 @@ jmpBackward(St) ->
     C = St#state.cells,
     Pc = St#state.pc,
     case (array:get(Dp, C) /= 0) of
-        true -> St#state{pc = getPreviousLBrace(St, Pc)};
+        true -> St#state{pc = getPreviousLBrace(St, Pc, 0)};
         false -> St
     end.
 
@@ -108,6 +116,7 @@ cycle(St) ->
                 46 -> outputByte(NewSt);
                 91 -> jmpForward(NewSt);
                 93 -> jmpBackward(NewSt);
+                44 -> storeByte(NewSt);
                 _ -> NewSt
             end);          
         false -> 1
