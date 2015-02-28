@@ -18,7 +18,7 @@ type CPUState a = State CPU a
 type CPUIOState a = StateT CPU IO a
 
 initialCPU :: [Word8] -> CPU
-initialCPU d = CPU M.empty 0 0 d
+initialCPU = CPU M.empty 0 0 
 
 -- | Increment the data pointer
 incDp :: CPUIOState ()
@@ -40,15 +40,15 @@ decByte = get >>= \cpu -> put $
 
 -- | Output the byte at the data pointer
 outputByte :: CPUIOState ()
-outputByte = 
-    get >>= \cpu ->
+outputByte = do
+    cpu <- get
     lift $ putChar $ toEnum $ fromIntegral (M.findWithDefault 0 (dp cpu) (cells cpu))
 
 
 -- | Input a byte into memory at the current data pointer
 inputByte :: CPUIOState ()
 inputByte = do
-    c <- lift $ getChar
+    c <- lift getChar
     cpu <- get
     put $ cpu{cells = M.insert (dp cpu) (fromIntegral $ fromEnum c) (cells cpu)}
 
@@ -58,16 +58,15 @@ inputByte = do
 jumpForwardIf0 :: CPUIOState ()
 jumpForwardIf0 = do
     cpu <- get
-    if M.findWithDefault 0 (dp cpu) (cells cpu) == 0
-        then jumpForward (pc cpu) 0
-        else return ()
+    when (M.findWithDefault 0 (dp cpu) (cells cpu) == 0)
+         $ jumpForward (pc cpu + 1) 0
 
   -- | Given current Position and stack counter of unmatched "["
   --   move forwards until match for "]" is found
   where jumpForward :: Int -> Int -> CPUIOState ()
         jumpForward i s = do
             cpu <- get
-            let byte = toEnum $ fromIntegral $ (ins cpu) !! i
+            let byte = toEnum $ fromIntegral $ ins cpu !! i
             if byte == '['
                 then jumpForward (i + 1) (s + 1)
                 else if byte == ']'
@@ -82,9 +81,8 @@ jumpForwardIf0 = do
 jumpBackwardIfNot0 :: CPUIOState ()
 jumpBackwardIfNot0 = do
     cpu <- get
-    if M.findWithDefault 0 (dp cpu) (cells cpu) /= 0
-        then jumpBackward ((pc cpu) - 1) 0
-        else return ()
+    when (M.findWithDefault 0 (dp cpu) (cells cpu) /= 0) $
+          jumpBackward (pc cpu - 1) 0
   
   -- | Given current Position and stack counter of unmatched "]"
   --   move backwards until match for "[" is found
@@ -104,7 +102,6 @@ execute :: CPUIOState ()
 execute = do
     cpu <- get
     let op = toEnum $ fromIntegral $ ins cpu !! pc cpu
-    lift $ putChar op
     case op of
         '>' -> incDp
         '<' -> decDp
@@ -112,7 +109,7 @@ execute = do
         '-' -> decByte
         '.' -> outputByte
         ',' -> inputByte
-     --   '[' -> jumpForwardIf0
+        '[' -> jumpForwardIf0
         ']' -> jumpBackwardIfNot0
         _ -> return ()
 
@@ -125,10 +122,14 @@ hoistState :: Monad m => State s a -> StateT s m a
 hoistState = StateT . (return .) . runState
 
 stripNonBF :: [Word8] -> [Word8]
-stripNonBF = filter(\c -> (toEnum $ fromIntegral c) `elem` "><+-.[]")
+stripNonBF = filter(\c -> toEnum (fromIntegral c) `elem` "><+-.[]")
 
 -- Given a BF file, execute it
 runBF :: String ->  IO ()
 runBF f = do
     file <- B.readFile f
     evalStateT execute (initialCPU (stripNonBF $ B.unpack file))
+    putStrLn ""
+
+
+
