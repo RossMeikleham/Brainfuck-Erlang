@@ -11,5 +11,5 @@ Brainfuck is an esoteric language, more information can be found on it [here](ht
 
 # Haskell
 - From the command line enter `ghci`
-- then `:l Brainfuck'
+- then `:l Brainfuck`
 - Interpret a Brainfuck file with `runBF FILENAME`
