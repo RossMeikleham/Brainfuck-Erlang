@@ -2,6 +2,7 @@
 
 Some Brainfuck interpreters written in Functional programming languages.
 
+Brainfuck is an esoteric language, more information can be found on it [here](http://en.wikipedia.org/wiki/Brainfuck)
 
 # Erlang
 -  From the command line enter the erlang shell by typing `erl`
@@ -10,5 +11,5 @@ Some Brainfuck interpreters written in Functional programming languages.
 
 # Haskell
 - From the command line enter `ghci`
-- then `:l Brainfuck'
+- then `:l Brainfuck`
 - Interpret a Brainfuck file with `runBF FILENAME`
