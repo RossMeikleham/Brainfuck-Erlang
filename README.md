@@ -13,3 +13,6 @@ Brainfuck is an esoteric language, more information can be found on it [here](ht
 - From the command line enter `ghci`
 - then `:l Brainfuck`
 - Interpret a Brainfuck file with `runBF FILENAME`
+
+# Scala
+- From the command line enter `scala Brainfuck.scala "[FileName]"`
