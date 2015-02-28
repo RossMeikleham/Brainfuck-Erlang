@@ -3,7 +3,7 @@
 
 
 -module(brainfuck).
--export([start/0]).
+-export([start/1]).
 -record(state, {data_pointer, cells, ins, pc}).
 
 % Create the state from startup and reset all memory
@@ -56,7 +56,7 @@ getNextRBrace(St, Pc, RCount) ->
     case Byte of
         $[ -> getNextRBrace(St, Pc + 1, RCount + 1);
         $] -> (case RCount of
-                0 -> Pc + 1;
+                0 -> Pc;
                 _ -> getNextRBrace(St, Pc + 1, RCount - 1)
               end);
         _  -> getNextRBrace(St, Pc + 1, RCount)
@@ -70,7 +70,7 @@ jmpForward(St) ->
     C = St#state.cells,
     Pc = St#state.pc,
     case (array:get(Dp, C) == 0) of
-        true -> St#state{pc = getNextRBrace(St, Pc, 0)};
+        true -> St#state{pc = getNextRBrace(St, Pc + 1, 0)};
         false -> St
     end.
 
@@ -125,14 +125,14 @@ cycle(St) ->
 
 
 
-start() ->
-    File = case file:read_file("examples/helloworld.bf") of
+start(Args) ->
+    [Fname | _] = Args,
+    File = case file:read_file(Fname) of
         {ok, F} -> lists:filter(fun(X) -> string:chr("><+-.[],", X) /= 0 end,
                         unicode:characters_to_list(F));
         {error, R} -> erlang:error(R)
     end,    
     
     Start = restartInterpreter(File),
-    cycle(Start).
-    %outputByte(Next).
-    %
+    cycle(Start),
+    io:fwrite("\n").
