@@ -54,8 +54,8 @@ storeByte(St) ->
 getNextRBrace(St, Pc, RCount) ->
     Byte = array:get(Pc, St#state.ins),
     case Byte of
-        91 -> getNextRBrace(St, Pc + 1, RCount + 1);
-        93 -> (case RCount of
+        $[ -> getNextRBrace(St, Pc + 1, RCount + 1);
+        $] -> (case RCount of
                 0 -> Pc + 1;
                 _ -> getNextRBrace(St, Pc + 1, RCount - 1)
               end);
@@ -80,8 +80,8 @@ jmpForward(St) ->
 getPreviousLBrace(St, Pc, RCount) ->
     Byte = array:get(Pc, St#state.ins),
     case Byte of
-        93 -> getPreviousLBrace(St, Pc - 1, RCount + 1);
-        91 -> (case RCount of
+        $] -> getPreviousLBrace(St, Pc - 1, RCount + 1);
+        $[ -> (case RCount of
                 0 -> Pc;
                 _ -> getPreviousLBrace(St, Pc - 1, RCount - 1)
               end);
@@ -110,14 +110,14 @@ cycle(St) ->
     case (Pc < array:size(St#state.ins)) of
         true -> cycle (
             case Op of
-                43 -> incByte(NewSt);
-                45 -> decByte(NewSt);
-                62 -> incDataPtr(NewSt);
-                60 -> decDataPtr(NewSt);
-                46 -> outputByte(NewSt);
-                91 -> jmpForward(NewSt);
-                93 -> jmpBackward(NewSt);
-                44 -> storeByte(NewSt);
+                $+ -> incByte(NewSt);
+                $- -> decByte(NewSt);
+                $> -> incDataPtr(NewSt);
+                $< -> decDataPtr(NewSt);
+                $. -> outputByte(NewSt);
+                $[ -> jmpForward(NewSt);
+                $] -> jmpBackward(NewSt);
+                $, -> storeByte(NewSt);
                 _ -> NewSt
             end);          
         false -> 1
@@ -125,13 +125,14 @@ cycle(St) ->
 
 
 
-
 start() ->
     File = case file:read_file("examples/helloworld.bf") of
-        {ok, F} -> unicode:characters_to_list(F);
+        {ok, F} -> lists:filter(fun(X) -> string:chr("><+-.[],", X) /= 0 end,
+                        unicode:characters_to_list(F));
         {error, R} -> erlang:error(R)
     end,    
+    
     Start = restartInterpreter(File),
     cycle(Start).
-    %Next = incByte(Start),
     %outputByte(Next).
+    %
