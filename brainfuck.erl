@@ -10,7 +10,7 @@
 % locations to 0
 restartInterpreter(Data) -> 
     #state{data_pointer = 0, cells = array:new(4096, {default, 0}), 
-           ins = array:from_list(Data), pc = 0}.
+           ins = array:from_list(Data), pc = -1}.
 
 % Decrement the data pointer
 incDataPtr(St) -> 
@@ -24,6 +24,7 @@ decDataPtr(St) ->
 incByte(St) ->
     Dp = St#state.data_pointer,
     C  = St#state.cells,
+    %io:fwrite("~p ", [Dp]),
     D  = array:set(Dp, (array:get(Dp, C) + 1) rem 256, C),
     St#state{cells = D}.
 
@@ -81,7 +82,7 @@ getPreviousLBrace(St, Pc, RCount) ->
     case Byte of
         93 -> getPreviousLBrace(St, Pc - 1, RCount + 1);
         91 -> (case RCount of
-                0 -> Pc - 1;
+                0 -> Pc;
                 _ -> getPreviousLBrace(St, Pc - 1, RCount - 1)
               end);
         _  -> getPreviousLBrace(St, Pc - 1, RCount)
@@ -95,7 +96,7 @@ jmpBackward(St) ->
     C = St#state.cells,
     Pc = St#state.pc,
     case (array:get(Dp, C) /= 0) of
-        true -> St#state{pc = getPreviousLBrace(St, Pc, 0)};
+        true -> St#state{pc = getPreviousLBrace(St, Pc - 1, 0)};
         false -> St
     end.
 
@@ -104,7 +105,7 @@ cycle(St) ->
     Pc = St#state.pc,
     NewSt = St#state{pc =  Pc + 1},
     Ins = St#state.ins,
-    Op = array:get(Pc, Ins),
+    Op = array:get(Pc + 1, Ins),
     
     case (Pc < array:size(St#state.ins)) of
         true -> cycle (

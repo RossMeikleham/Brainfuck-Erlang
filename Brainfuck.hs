@@ -103,22 +103,22 @@ jumpBackwardIfNot0 = do
 execute :: CPUIOState ()
 execute = do
     cpu <- get
-    case (toEnum $ fromIntegral $ (ins cpu) !! (pc cpu)) of
+    let op = toEnum $ fromIntegral $ ins cpu !! pc cpu
+    lift $ putChar op
+    case op of
         '>' -> incDp
         '<' -> decDp
         '+' -> incByte
         '-' -> decByte
         '.' -> outputByte
         ',' -> inputByte
-        '[' -> jumpForwardIf0
+     --   '[' -> jumpForwardIf0
         ']' -> jumpBackwardIfNot0
         _ -> return ()
 
     cpu' <- get
     put $ cpu'{pc = pc cpu' + 1}
-    if (pc cpu' + 1) < length (ins cpu')
-        then execute
-        else return ()
+    when ((pc cpu' + 1) < length (ins cpu')) execute
 
 
 hoistState :: Monad m => State s a -> StateT s m a
