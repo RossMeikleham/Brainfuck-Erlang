@@ -1,18 +1,20 @@
+import java.nio.file.{Files, Paths}
 
 // Brainfuck Interpreter written in Scala
 object Brainfuck {
 
-    class CPU {  
-      var cells: Array[Byte] = new Array[Byte](0x4000) // Memory cells
-      var pc = 0  // Program Counter
+    class CPU(instructions : Array[Byte]) {  
+      var pc = -1  // Program Counter
       var dp = 0  // Data Pointer
-      
-      def CPU(program : Array[Byte]) {
-        cells = program
-      }
+      var cells : Array[Byte] = new Array[Byte](0x4000)
 
       def getOp() : Char = { 
-        cells(pc).toChar 
+        instructions(pc).toChar 
+      }
+
+      // Check if PC is out of bounds
+      def outOfBounds : Boolean = {
+        pc < 0 || pc >= instructions.length
       }
       
       // Increment Program Counter
@@ -35,45 +37,83 @@ object Brainfuck {
       
       //Increment Byte at the Data Pointer
       def incByte() : CPU = {
-        cells(dp) = cells(dp) + 1
+        cells(dp) = (cells(dp).toInt + 1).toByte
         this
       } 
 
       //Decrement Byte at the Data Pointer
       def decByte() : CPU = {
-        cells(dp) = cells(dp) - 1
+        cells(dp) = (cells(dp).toInt - 1).toByte
         this
       }
 
+      def getByte() : CPU = {
+        print("prompt>")
+        cells(dp) = readChar.toByte
+        this 
+      }
 
+      def outputByte() : CPU = {
+        print(cells(dp).toChar)  
+        this
+      }
+
+      // Set the PC before the previous matching "[" if
+      // value at the data pointer is not equal to 0
+      def jumpBackNZ() : CPU = {
+        cells(dp) match {
+          case 0 => this
+          case _ => jumpBack(pc - 1, 0)
+        }
+                 
+        
+        def jumpBack(tempPc: Int, stackLevel: Int) : CPU = {
+          instructions(tempPc).toChar match {
+            case ']' => jumpBack(tempPc - 1, stackLevel + 1)
+            case '[' => stackLevel match {
+                     case 0 => {this.pc = tempPc - 1
+                                this
+                               }
+                     case _ => jumpBack(tempPc - 1, stackLevel - 1)
+                   }
+            case _  => jumpBack(tempPc - 1, stackLevel)
+          }   
+        }
+
+        this
+      }
 
     }
 
     def main(args: Array[String]) {
         
-        val fileName = args(0)         
-        println("Hello World!\n" + fileName);
-         
+        val fileName = args(0)   
+        val file = Files.readAllBytes(Paths.get(fileName))      
+        var cpu = new CPU(file)
+        run(cpu)    
     }
 
+    // Run the interpreter
     def run(cpu: CPU) : CPU  = {
 
       val newCPU = cpu.incPC()
-
-      cpu.getOp() match {
-        case '>' => run(newCPU.incDP())
-        case '<' => run(newCPU.decDP())
-        case '+' => run(newCPU.incByte())
-        case '-' => run(newCPU.decByte())
-        case '[' => run(cpu)
-        case ']' => run(cpu)
-        case ',' => run(cpu)
-        case '.' => run(cpu)
-        case  _  => cpu
-
-    }
-    }
-    
+      
+      if (!newCPU.outOfBounds) {
+        newCPU.getOp() match {
+          case '>' => run(newCPU.incDP())
+          case '<' => run(newCPU.decDP())
+          case '+' => run(newCPU.incByte())
+          case '-' => run(newCPU.decByte())
+       //   case '[' => run(cpu)
+          case ']' => run(newCPU.jumpBackNZ())
+          case ',' => run(newCPU.getByte())
+          case '.' => run(newCPU.outputByte())
+          case  _  => run(newCPU)
+        }
+      } else {
+        newCPU
+      }
+    }   
     
 }
 
