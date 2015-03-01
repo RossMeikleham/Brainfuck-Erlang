@@ -58,6 +58,30 @@ object Brainfuck {
         this
       }
 
+      // Set the PC after the next matching "]" if
+      // value at the data pointer is equal to 0
+      def jumpForwardZ() : CPU = {
+        cells(dp) match {
+          case 0 => jumpForward(pc + 1, 0)
+          case _ => this
+        }
+
+        def jumpForward(tempPc: Int, stackLevel: Int) : CPU = {
+          instructions(tempPc).toChar match {
+            case '[' => jumpForward(tempPc + 1, stackLevel + 1)
+            case ']' => stackLevel match {
+                          case 0 => {this.pc = tempPc - 1
+                                     this
+                                    }
+                          case _ => jumpForward(tempPc + 1, stackLevel - 1)
+                        }
+            case _   => jumpForward(tempPc + 1, stackLevel)
+          }
+        }
+
+        this
+      }
+
       // Set the PC before the previous matching "[" if
       // value at the data pointer is not equal to 0
       def jumpBackNZ() : CPU = {
@@ -71,11 +95,11 @@ object Brainfuck {
           instructions(tempPc).toChar match {
             case ']' => jumpBack(tempPc - 1, stackLevel + 1)
             case '[' => stackLevel match {
-                     case 0 => {this.pc = tempPc - 1
-                                this
-                               }
-                     case _ => jumpBack(tempPc - 1, stackLevel - 1)
-                   }
+                          case 0 => {this.pc = tempPc - 1
+                                     this
+                                    }
+                          case _ => jumpBack(tempPc - 1, stackLevel - 1)
+                        }
             case _  => jumpBack(tempPc - 1, stackLevel)
           }   
         }
@@ -89,8 +113,9 @@ object Brainfuck {
         
         val fileName = args(0)   
         val file = Files.readAllBytes(Paths.get(fileName))      
-        var cpu = new CPU(file)
-        run(cpu)    
+        var cpu = new CPU(file.filter(x => "<>+-[],.".indexOf(x.toChar) != -1 ))
+        run(cpu)   
+        println("") 
     }
 
     // Run the interpreter
@@ -104,7 +129,7 @@ object Brainfuck {
           case '<' => run(newCPU.decDP())
           case '+' => run(newCPU.incByte())
           case '-' => run(newCPU.decByte())
-       //   case '[' => run(cpu)
+          case '[' => run(newCPU.jumpForwardZ)
           case ']' => run(newCPU.jumpBackNZ())
           case ',' => run(newCPU.getByte())
           case '.' => run(newCPU.outputByte())
