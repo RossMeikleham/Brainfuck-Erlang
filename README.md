@@ -17,6 +17,6 @@ Brainfuck is an esoteric language, more information can be found on it [here](ht
 # Scala
 - From the command line enter `scala Brainfuck.scala "FileName"`
 
-#F#
+# F&#35;
 - From the command line run `fsc Brainfuck.fs` to compile to an executable
 - `./Brainfuck "FileName"` to run
