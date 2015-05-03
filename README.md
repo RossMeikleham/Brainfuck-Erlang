@@ -12,7 +12,11 @@ Brainfuck is an esoteric language, more information can be found on it [here](ht
 # Haskell
 - From the command line enter `ghci`
 - then `:l Brainfuck`
-- Interpret a Brainfuck file with `runBF FILENAME`
+- Interpret a Brainfuck file with `runBF "FileName"`
 
 # Scala
-- From the command line enter `scala Brainfuck.scala "[FileName]"`
+- From the command line enter `scala Brainfuck.scala "FileName"`
+
+# F&#35;
+- From the command line run `fsc Brainfuck.fs` to compile to an executable
+- `./Brainfuck "FileName"` to run
