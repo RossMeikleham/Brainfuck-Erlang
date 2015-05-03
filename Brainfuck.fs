@@ -12,7 +12,7 @@ type CPU = {
    
 
 let createCPU (ins : byte array) : CPU = 
-    {instructions = ins; cells = Array.zeroCreate 30000; pc = 0ul; dp = 0ul}    
+    {instructions = ins; cells = Array.zeroCreate 50000; pc = 0ul; dp = 0ul}    
 
 
 // Jump forwards if cell at the current data pointer is 0
@@ -63,7 +63,9 @@ let run (cpu : CPU) : CPU =
              incPC cpu
 
     | ',' -> let str = Console.ReadLine()
-             cpu.cells.[int32(cpu.dp)] <- byte(str.[0])
+             if String.length str <> 0
+                then cpu.cells.[int32(cpu.dp)] <- byte(str.[0])
+                else cpu.cells.[int32(cpu.dp)] <- 10uy
              incPC cpu
           
     | '<' -> let cpu' = {cpu with dp = cpu.dp - 1ul}

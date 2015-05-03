@@ -122,7 +122,7 @@ hoistState :: Monad m => State s a -> StateT s m a
 hoistState = StateT . (return .) . runState
 
 stripNonBF :: [Word8] -> [Word8]
-stripNonBF = fjlter(\c -> toEnum (fromIntegral c) `elem` "><+-.[],")
+stripNonBF = filter(\c -> toEnum (fromIntegral c) `elem` "><+-.[],")
 
 -- Given a BF file, execute it
 runBF :: String ->  IO ()
